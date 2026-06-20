@@ -13,6 +13,12 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 app.use('/tasks', tasksRouter);
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
 
-module.exports = app; // exported for tests (supertest)
+// Only start listening when this file is run directly (e.g. `node server.js`),
+// not when it's imported elsewhere — like in tests, where supertest just
+// needs the `app` object, not a running server.
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+}
+
+module.exports = app;
