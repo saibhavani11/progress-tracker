@@ -51,6 +51,7 @@ You'll need a local Postgres instance running and the `init.sql` schema applied 
 - [x] User accounts / auth (JWT-based, multi-user support)
 - [x] Calendar heatmap view
 - [x] Dark mode + redesigned UI (Tailwind CSS)
+- [x] Push notifications (morning planning prompt, evening nudge, streak-risk warning)
 - [ ] Deploy to the cloud (Terraform + EC2, or Render)
 - [ ] Monitoring with Prometheus + Grafana
 - [ ] Friend accountability / shared streaks

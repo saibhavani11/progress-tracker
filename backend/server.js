@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const tasksRouter = require('./routes/tasks');
 const authRouter = require('./routes/auth');
+const pushRouter = require('./routes/push');
 const requireAuth = require('./middleware/auth');
 
 const app = express();
@@ -14,6 +15,7 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 app.use('/auth', authRouter);          // public: signup, login
 app.use('/tasks', requireAuth, tasksRouter); // protected: requires a valid JWT
+app.use('/push', requireAuth, pushRouter);   // protected: subscribe/unsubscribe
 
 const PORT = process.env.PORT || 4000;
 
@@ -23,6 +25,7 @@ const PORT = process.env.PORT || 4000;
 // suite would open a second server that's never closed, causing Jest to hang.
 if (require.main === module) {
   app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+  require('./cron'); // starts the scheduled notification jobs
 }
 
 module.exports = app; // exported for tests (supertest)
