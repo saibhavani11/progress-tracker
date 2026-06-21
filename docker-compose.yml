@@ -25,6 +25,7 @@ services:
       DB_USER: postgres
       DB_PASSWORD: postgres
       DB_NAME: progress_tracker
+      JWT_SECRET: change-this-to-a-long-random-string-in-production
     ports:
       - "4000:4000"
 

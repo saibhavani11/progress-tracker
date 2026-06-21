@@ -1,69 +1,169 @@
 import React, { useEffect, useState } from 'react';
+import { AuthProvider, useAuth, API_URL } from './AuthContext.jsx';
+import AuthScreen from './AuthScreen.jsx';
+import Heatmap from './Heatmap.jsx';
 
-// Point this at your backend. In docker-compose this becomes the service name.
-const API = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+function authedFetch(token) {
+  return (path, options = {}) =>
+    fetch(`${API_URL}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...options.headers,
+      },
+    });
+}
 
-export default function App() {
+function Tracker() {
+  const { user, token, logout } = useAuth();
+  const fetchApi = authedFetch(token);
+
+  const [dark, setDark] = useState(() => localStorage.getItem('dark') === 'true');
   const [tasks, setTasks] = useState([]);
   const [title, setTitle] = useState('');
   const [streak, setStreak] = useState(0);
-
-  const loadTasks = () => {
-    fetch(`${API}/tasks`).then(r => r.json()).then(setTasks);
-  };
-
-  const loadStreak = () => {
-    fetch(`${API}/tasks/streak`).then(r => r.json()).then(d => setStreak(d.streak));
-  };
+  const [history, setHistory] = useState([]);
 
   useEffect(() => {
-    loadTasks();
-    loadStreak();
-  }, []);
+    document.documentElement.classList.toggle('dark', dark);
+    localStorage.setItem('dark', dark);
+  }, [dark]);
+
+  const loadAll = async () => {
+    const [tasksRes, streakRes, historyRes] = await Promise.all([
+      fetchApi('/tasks').then((r) => r.json()),
+      fetchApi('/tasks/streak').then((r) => r.json()),
+      fetchApi('/tasks/history').then((r) => r.json()),
+    ]);
+    setTasks(tasksRes);
+    setStreak(streakRes.streak);
+    setHistory(historyRes);
+  };
+
+  useEffect(() => { loadAll(); }, []);
 
   const addTask = async (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    await fetch(`${API}/tasks`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title }),
-    });
+    await fetchApi('/tasks', { method: 'POST', body: JSON.stringify({ title }) });
     setTitle('');
-    loadTasks();
+    loadAll();
   };
 
   const toggle = async (id) => {
-    await fetch(`${API}/tasks/${id}/toggle`, { method: 'PATCH' });
-    loadTasks();
-    loadStreak();
+    await fetchApi(`/tasks/${id}/toggle`, { method: 'PATCH' });
+    loadAll();
   };
 
+  const remove = async (id) => {
+    await fetchApi(`/tasks/${id}`, { method: 'DELETE' });
+    loadAll();
+  };
+
+  const completedCount = tasks.filter((t) => t.completed).length;
+  const progressPct = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0;
+
   return (
-    <div style={{ maxWidth: 480, margin: '40px auto', fontFamily: 'sans-serif' }}>
-      <h1>Today's Progress</h1>
-      <p>🔥 Current streak: <strong>{streak}</strong> day(s)</p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      <header className="max-w-2xl mx-auto px-4 pt-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Hey {user?.name?.split(' ')[0]} 👋</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Let's keep the streak alive.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setDark(!dark)}
+            className="text-sm px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600"
+          >
+            {dark ? '☀️ Light' : '🌙 Dark'}
+          </button>
+          <button onClick={logout} className="text-sm text-gray-500 hover:text-red-500">
+            Log out
+          </button>
+        </div>
+      </header>
 
-      <form onSubmit={addTask} style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Add a task for today"
-          style={{ flex: 1, padding: 8 }}
-        />
-        <button type="submit">Add</button>
-      </form>
+      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        {/* Streak + progress card */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5 flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Current streak</p>
+            <p className="text-3xl font-bold">🔥 {streak} <span className="text-base font-normal">day{streak === 1 ? '' : 's'}</span></p>
+          </div>
+          <div className="w-32">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-1 text-right">{progressPct}% today</p>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div
+                className="bg-brand-500 h-2 rounded-full transition-all"
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+          </div>
+        </div>
 
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {tasks.map((t) => (
-          <li key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 6 }}>
-            <input type="checkbox" checked={t.completed} onChange={() => toggle(t.id)} />
-            <span style={{ textDecoration: t.completed ? 'line-through' : 'none' }}>
-              {t.title}
-            </span>
-          </li>
-        ))}
-      </ul>
+        {/* Heatmap card */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5 overflow-x-auto">
+          <Heatmap history={history} />
+        </div>
+
+        {/* Task list card */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5">
+          <form onSubmit={addTask} className="flex gap-2 mb-4">
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Add a task for today"
+              className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
+            <button type="submit" className="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-lg font-medium">
+              Add
+            </button>
+          </form>
+
+          {tasks.length === 0 ? (
+            <p className="text-gray-400 text-sm text-center py-6">No tasks yet — add your first one above.</p>
+          ) : (
+            <ul className="space-y-2">
+              {tasks.map((t) => (
+                <li
+                  key={t.id}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 group"
+                >
+                  <input
+                    type="checkbox"
+                    checked={t.completed}
+                    onChange={() => toggle(t.id)}
+                    className="w-5 h-5 accent-brand-600"
+                  />
+                  <span className={`flex-1 ${t.completed ? 'line-through text-gray-400' : ''}`}>
+                    {t.title}
+                  </span>
+                  <button
+                    onClick={() => remove(t.id)}
+                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition"
+                  >
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </main>
     </div>
+  );
+}
+
+function Root() {
+  const { token } = useAuth();
+  return token ? <Tracker /> : <AuthScreen />;
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <Root />
+    </AuthProvider>
   );
 }

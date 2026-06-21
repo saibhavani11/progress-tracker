@@ -48,8 +48,9 @@ You'll need a local Postgres instance running and the `init.sql` schema applied 
 - [x] Working full-stack MVP (local)
 - [x] Dockerized with Docker Compose
 - [x] CI pipeline (tests on every push)
-- [ ] User accounts / auth (multi-user support)
-- [ ] Calendar heatmap view
+- [x] User accounts / auth (JWT-based, multi-user support)
+- [x] Calendar heatmap view
+- [x] Dark mode + redesigned UI (Tailwind CSS)
 - [ ] Deploy to the cloud (Terraform + EC2, or Render)
 - [ ] Monitoring with Prometheus + Grafana
 - [ ] Friend accountability / shared streaks
