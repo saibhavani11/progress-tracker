@@ -1,4 +1,5 @@
 // server.js — app entry point.
+const initDb = require('./initDb');
 const express = require('express');
 const cors = require('cors');
 const tasksRouter = require('./routes/tasks');
@@ -24,8 +25,12 @@ const PORT = process.env.PORT || 4000;
 // needs the `app` object, not a running server. Without this check, the test
 // suite would open a second server that's never closed, causing Jest to hang.
 if (require.main === module) {
-  app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
-  require('./cron'); // starts the scheduled notification jobs
+  initDb()
+    .then(() => {
+      app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+      require('./cron');
+    })
+    .catch(console.error);
 }
 
 module.exports = app; // exported for tests (supertest)
