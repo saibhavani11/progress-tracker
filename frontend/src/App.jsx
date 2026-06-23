@@ -80,7 +80,7 @@ function Tracker() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      <header className="max-w-2xl mx-auto px-4 pt-8 flex items-center justify-between">
+      <header className="max-w-4xl mx-auto px-4 pt-6 pb-2 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Hey {user?.name?.split(' ')[0]} 👋</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm">Let's keep the streak alive.</p>
@@ -109,15 +109,23 @@ function Tracker() {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+    
+        <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 space-y-5 pb-24">
         {tasks.length === 0 ? (
           // Calm, focused "plan your day" screen instead of an empty dashboard.
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-8 text-center">
             <p className="text-2xl mb-2">☀️</p>
-            <h2 className="text-xl font-semibold mb-1">What's on your mind today?</h2>
-            <p className="text-gray-500 dark:text-gray-400 text-sm mb-5">
-              Add it before the day takes over.
-            </p>
+            <div className="mb-6">
+  <div className="text-5xl mb-3">🎯</div>
+
+  <h2 className="text-2xl font-bold mb-2">
+    Welcome to Progress
+  </h2>
+
+  <p className="text-gray-500 dark:text-gray-400">
+    Start your journey by creating your first task.
+  </p>
+</div>
             <form onSubmit={addTask} className="flex gap-2 max-w-sm mx-auto">
               <input
                 value={title}
@@ -158,7 +166,7 @@ function Tracker() {
 </div>
           
         {/* Streak + progress card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5 flex items-center justify-between">
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm p-5 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Current streak</p>
             <p className="text-3xl font-bold">🔥 {streak} <span className="text-base font-normal">day{streak === 1 ? '' : 's'}</span></p>
@@ -177,7 +185,39 @@ function Tracker() {
         {/* Heatmap card */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5">
   <WeeklyStreak streak={streak} />
+  <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5">
+  <div className="flex items-center gap-4">
+    <div className="w-14 h-14 rounded-full bg-brand-500 text-white flex items-center justify-center text-xl font-bold">
+      {user?.name?.charAt(0)}
+    </div>
+
+    <div>
+      <h3 className="font-semibold text-lg">{user?.name}</h3>
+      <p className="text-gray-500 text-sm">
+        🔥 {streak} day streak
+      </p>
+    </div>
+  </div>
+
+  <div className="grid grid-cols-3 gap-3 mt-4 text-center">
+    <div>
+      <p className="font-bold">{tasks.length}</p>
+      <p className="text-xs text-gray-500">Tasks</p>
+    </div>
+
+    <div>
+      <p className="font-bold">{completedCount}</p>
+      <p className="text-xs text-gray-500">Done</p>
+    </div>
+
+    <div>
+      <p className="font-bold">{progressPct}%</p>
+      <p className="text-xs text-gray-500">Success</p>
+    </div>
+  </div>
 </div>
+</div>
+
 
         {/* Task list card */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5">
@@ -221,6 +261,28 @@ function Tracker() {
         </>
         )}
       </main>
+       {/* Bottom Navigation */}
+       <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex justify-around py-3 shadow-lg">
+        <button className="flex flex-col items-center text-green-600">
+          <span>🏠</span>
+          <span className="text-xs">Home</span>
+        </button>
+
+        <button className="flex flex-col items-center text-gray-500">
+          <span>📅</span>
+          <span className="text-xs">Calendar</span>
+        </button>
+
+        <button className="flex flex-col items-center text-gray-500">
+          <span>📊</span>
+          <span className="text-xs">Stats</span>
+        </button>
+
+        <button className="flex flex-col items-center text-gray-500">
+          <span>👤</span>
+          <span className="text-xs">Profile</span>
+        </button>
+      </nav>
     </div>
   );
 }
